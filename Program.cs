@@ -3,7 +3,6 @@
 using System;
 using System.IO;
 using CommandLine;
-using FileBackupper.Backup;
 
 #endregion
 
