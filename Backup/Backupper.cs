@@ -1,48 +1,22 @@
 ﻿#region
 
-using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
+using Ionic.Zip;
 
 #endregion
 
 namespace FileBackupper {
-internal class Backupper {
-    private readonly BackupItemList backupItems;
-    private readonly bool shouldZip;
-    private readonly DirectoryInfo targetDirectory;
+    internal class Backupper {
+        internal static void Backup(BackupItemList backupItems, string targetFilePath, string logFileName) {
+            var zip = File.Exists(targetFilePath) ? ZipFile.Read(targetFilePath) : new ZipFile(targetFilePath);
+            var zipper = new Zipper(zip, logFileName);
+            zipper.AddItems(backupItems);
+            zipper.Save();
+            Log.Info($"Backup complete. Backup zip location is '{targetFilePath}'");
 
-
-    public Backupper(string pathsCsv, string targetPath, bool shouldZip = true) {
-        this.targetDirectory =
-            new DirectoryInfo(string.IsNullOrWhiteSpace(targetPath) ? Directory.GetCurrentDirectory() : targetPath);
-        this.backupItems = BackupItemList.CreateFromCsv(pathsCsv, this.targetDirectory);
-        this.shouldZip = shouldZip;
-    }
-
-
-    internal void Backup(string logFilePath) {
-        Log.Info($"Starting backup to target folder '{this.targetDirectory}'");
-        this.targetDirectory.Create();
-        this.backupItems.PerformBackup(true);
-
-        if (this.shouldZip){
-            this.ZipResult(logFilePath);
-        } else{
-            Log.WriteEventsToFile(logFilePath);
+            //foreach (var (file, exception) in this.backupItems.ErrorFiles) {
+            //    Log.Error($"Could not backup file '{file.FullName}' ({exception.Message})");
+            //}
         }
-        Log.Info("Backup complete");
     }
-
-    private void ZipResult(string logFilePath) {
-        Log.Info($"Creating a zip archive from '{this.targetDirectory.FullName}'");
-        Log.WriteEventsToFile(logFilePath);
-        ZipFile.CreateFromDirectory(this.targetDirectory.FullName,
-            Path.ChangeExtension(this.targetDirectory.FullName, ".zip"),
-            CompressionLevel.Optimal, false, null);
-        Log.Info($"Deleting working folder '{this.targetDirectory.FullName}'");
-        this.targetDirectory.Delete(true);
-    }
-}
 }

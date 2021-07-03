@@ -13,64 +13,75 @@ using log4net.Layout;
 #endregion
 
 namespace FileBackupper {
-internal class Log {
-    private const string DatePattern = "yyyy-MM-dd HH:mm:ss";
-    private static readonly string AppenderPattern = $"%date{{{DatePattern}}} [%p] %m%n";
+    internal class Log {
+        private const string DatePattern = "yyyy-MM-dd HH:mm:ss,fff";
+        private const string FileTimestampPattern = "yyyy-MM-dd-HH-mm-ss";
+        private static readonly string AppenderPattern = $"%date{{{DatePattern}}} [%p] %m%n";
+        public static readonly string LogFilePath = Path.Combine(Path.GetTempPath(), $"FileBackupper_{DateTime.Now.ToString(FileTimestampPattern)}.log");
 
-    private static readonly ILog Logger;
-    private static readonly StringBuilder LogEvents;
+        private static readonly ILog Logger;
+        private static readonly StringBuilder LogEvents;
 
-    static Log() {
-        Logger = LogManager.GetLogger(MethodBase.GetCurrentMethod()?.DeclaringType);
-        LogEvents = new StringBuilder();
+        static Log() {
+            Logger = LogManager.GetLogger(MethodBase.GetCurrentMethod()?.DeclaringType);
+            LogEvents = new StringBuilder();
 
-        var consoleAppender = new ConsoleAppender() {
-            Layout = new PatternLayout(AppenderPattern),
-            Threshold = Level.Info
-        };
-        var textWriterAppender = new TextWriterAppender() {
-            Layout = new PatternLayout(AppenderPattern),
-            Threshold = Level.All,
-            Writer = new StringWriter(LogEvents)
-        };
-        BasicConfigurator.Configure(textWriterAppender /*, consoleAppender*/);
-    }
+            var consoleAppender = new ConsoleAppender() {
+                Layout = new PatternLayout(AppenderPattern),
+                Threshold = Level.Info
+            };
+            var textWriterAppender = new TextWriterAppender() {
+                Layout = new PatternLayout(AppenderPattern),
+                Threshold = Level.All,
+                Writer = new StringWriter(LogEvents)
+            };
+            var rollingFileAppender = new RollingFileAppender() {
+                Layout = new PatternLayout(AppenderPattern),
+                AppendToFile = true,
+                Threshold = Level.All,
+                File = LogFilePath,
+                ImmediateFlush = true,
 
-    internal static void Info(string message, bool printToConsole = true) {
-        Logger.Info(message);
-        if (printToConsole){
-            PrintToConsole(message, Level.Info);
-        }
-    }
-
-    internal static void Error(string message, Exception exception = null, bool printToConsole = true) {
-        Logger.Error(message);
-        if (exception != null){
-            Logger.Debug(exception);
+            };
+            rollingFileAppender.ActivateOptions();
+            BasicConfigurator.Configure(textWriterAppender, rollingFileAppender /*, consoleAppender*/);
         }
 
-        if (printToConsole){
-            PrintToConsole(message, Level.Error);
-        }
-    }
-
-    internal static void Warning(string message, Exception exception = null, bool printToConsole = true) {
-        Logger.Warn(message);
-        if (exception != null){
-            Logger.Debug(exception);
+        internal static void Info(string message, bool printToConsole = true) {
+            Logger.Info(message);
+            if (printToConsole) {
+                PrintToConsole(message, Level.Info);
+            }
         }
 
-        if (printToConsole){
-            PrintToConsole(message, Level.Warn);
+        internal static void Error(string message, Exception exception = null, bool printToConsole = true) {
+            Logger.Error(message);
+            if (exception != null) {
+                Logger.Debug(exception);
+            }
+
+            if (printToConsole) {
+                PrintToConsole(message, Level.Error);
+            }
+        }
+
+        internal static void Warning(string message, Exception exception = null, bool printToConsole = true) {
+            Logger.Warn(message);
+            if (exception != null) {
+                Logger.Debug(exception);
+            }
+
+            if (printToConsole) {
+                PrintToConsole(message, Level.Warn);
+            }
+        }
+
+        private static void PrintToConsole(string message, Level priority) {
+            Console.WriteLine($"{DateTime.Now.ToString(DatePattern)} [{priority.DisplayName}] {message}");
+        }
+
+        internal static void WriteEventsToFile(string path) {
+            File.WriteAllText(path, LogEvents.ToString());
         }
     }
-
-    private static void PrintToConsole(string message, Level priority) {
-        Console.WriteLine($"{DateTime.Now.ToString(DatePattern)} [{priority.DisplayName}] {message}");
-    }
-
-    internal static void WriteEventsToFile(string path) {
-        File.WriteAllText(path, LogEvents.ToString());
-    }
-}
 }

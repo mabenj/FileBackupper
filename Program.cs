@@ -7,32 +7,35 @@ using CommandLine;
 #endregion
 
 namespace FileBackupper {
-internal class Program {
-    private static readonly string Timestamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
+    internal class Program {
+        internal const string TimestampFormat = "yyyy-MM-dd-HH-mm-ss";
 
-    private static int Main(string[] args) {
-        return Parser.Default.ParseArguments<Options>(args).MapResult(Execute, _ => 1);
-    }
-
-    private static int Execute(Options options) {
-        var targetPath = GetBackupTargetPath(options.TargetDirectory);
-        var logFilePath = Path.Combine(targetPath, $"Backup_{Timestamp}.log");
-        try {
-            var backupper = new Backupper(options.PathsFile, targetPath, options.ShouldZip);
-            backupper.Backup(logFilePath);
-        } catch (Exception e){
-            Log.Error($"Backing up failed. See '{logFilePath}' for more details.", e);
-            Log.WriteEventsToFile(logFilePath);
-
-            return 1;
+        private static int Main(string[] args) {
+            return Parser.Default.ParseArguments<Options>(args).MapResult(Execute, _ => 1);
         }
-        return 0;
-    }
 
-    private static string GetBackupTargetPath(string providedTarget = null) {
-        var targetDirectory = string.IsNullOrWhiteSpace(providedTarget) ? Directory.GetCurrentDirectory() : providedTarget;
-        var targetPath = Path.Combine(targetDirectory, $"Backup_{Timestamp}");
-        return targetPath;
+        private static int Execute(Options options) {
+            var targetFilePath = GetBackupTargetPath(string.IsNullOrWhiteSpace(options.AppendTo) ? options.TargetDirectory : options.AppendTo);
+            var logFileName = $"Backup_{DateTime.Now.ToString(TimestampFormat)}.log";
+            try {
+                var backupItems = BackupItemList.CreateFromCsv(options.Config);
+                Backupper.Backup(backupItems, targetFilePath, logFileName);
+            } catch (Exception e) {
+                var logFilePath = Path.Combine(Path.GetDirectoryName(targetFilePath) ?? string.Empty, logFileName);
+                Log.WriteEventsToFile(logFilePath);
+                Log.Error($"Backing up failed. See '{logFilePath}' for more details. ({e.Message})", e);
+                return 1;
+            } finally {
+                //TODO cleanup
+            }
+
+            return 0;
+        }
+
+        private static string GetBackupTargetPath(string providedTarget = default) {
+            var target = string.IsNullOrWhiteSpace(providedTarget) ? Directory.GetCurrentDirectory() : providedTarget;
+            var targetFile = File.Exists(target) ? target : Path.Combine(target, $"Backup_{DateTime.Now.ToString(TimestampFormat)}.zip");
+            return targetFile;
+        }
     }
-}
 }

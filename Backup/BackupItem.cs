@@ -6,13 +6,13 @@ using System.IO;
 
 namespace FileBackupper {
 internal class BackupItem {
-    internal BackupItem(FileSystemInfo source, DirectoryInfo target) {
+    internal BackupItem(FileInfo source, string target) {
         this.Source = source;
         this.Target = target;
     }
 
-    internal FileSystemInfo Source { get; }
+    internal FileInfo Source { get; }
 
-    internal DirectoryInfo Target { get; }
+    internal string Target { get; }
 }
 }

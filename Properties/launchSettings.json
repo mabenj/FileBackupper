@@ -2,7 +2,7 @@
   "profiles": {
     "FileBackupper": {
       "commandName": "Project",
-      "commandLineArgs": "-c \"C:\\Users\\Marko\\backup-testing\\backup-test.csv\" -d \"C:\\Users\\Marko\\backup-testing\""
+      "commandLineArgs": "-c \"C:\\Users\\Marko\\backup-testing\\backup.csv\" -d \"C:\\Users\\Marko\\backup-testing\""
     }
   }
 }

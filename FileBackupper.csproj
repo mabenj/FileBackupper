@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Authors>Marko Järvinen</Authors>
     <Company>Marko Järvinen</Company>
+    <Copyright>Marko Järvinen @mabenj</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
